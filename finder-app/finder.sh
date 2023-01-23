@@ -22,11 +22,11 @@ else
 	exit 1
 fi
 
-matchfiles= ls | wc -l
+matchfiles=$( ls | wc -l )
 cd $1
 #grep -r "${searchstr}" ${filesdir} > grep.txt
 #matchlines= cat grep.txt | wc -l
-matchlines= grep -r "${searchstr}" * | wc -l
+matchlines=$( grep -r "${searchstr}" * | wc -l )
 
 echo "The number of files are ${matchfiles} and the number of matching lines are ${matchlines}"
 

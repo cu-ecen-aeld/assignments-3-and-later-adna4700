@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash 
 writefile=$1
 writestr=$2
 
@@ -13,15 +13,15 @@ else
 	exit 1
 fi
 
-dirnm= dirname $1
-mkdir ${dirnm}
+dirnm=$( dirname $1 )
+mkdir -p ${dirnm}
 touch $1
 
 #Test for directory check
-if [ -d $1 ]
+if [ -d ${dirnm} ]
 then
 	echo "The ${writefile} found"
-	${writestr} > ${writefile}
+	echo ${writestr} > ${writefile}
 else
 
 	echo "${writefile} cannot be created"
