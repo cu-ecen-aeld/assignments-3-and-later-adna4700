@@ -15,20 +15,19 @@ fi
 
 dirnm=$( dirname $1 )
 mkdir -p ${dirnm}
-touch $1
 
 #Test for directory check
 if [ -d ${dirnm} ]
 then
 	echo "The ${writefile} found"
 	echo ${writestr} > ${writefile}
+	exit 0
 else
 
-	echo "${writefile} cannot be created"
+	echo "${writefile} not found; will be created"
 	exit 1
 	
 fi
 
 
-#${writestr} > ${writefile}
 
