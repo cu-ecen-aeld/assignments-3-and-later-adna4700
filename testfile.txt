@@ -1,1 +1,1 @@
-home is /home/aditi
+home is $HOME
