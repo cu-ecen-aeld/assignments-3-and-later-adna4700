@@ -1,4 +1,15 @@
 #include "systemcalls.h"
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <syslog.h>
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 /**
  * @param cmd the command to execute with system()
@@ -10,43 +21,17 @@
 bool do_system(const char *cmd)
 {   
     //setting up system log
-    openlog(NULL, 0, LOG_USER);
+  
 
     int return_from_system = system(cmd);
+
     
-    if(cmd == NULL)
-	{
-    	if(return_from_system != 0)
-		{
-			syslog(LOG_ERR, "SHELL available");
-			closelog();
-			return false;
-    		}
-	if(return_from_system == 0)
-		{
-			syslog(LOG_ERR, "SHELL isn't available");
-			closelog();
-			return false;				
-    		}
-	}
-     if(return_from_system == -1)
-     	{
-		//Child process could not be created or its status could not be retrived
-		syslog( LOG_ERR, "Error: %s", strerror(errno));
-		closelog();
-		return false;    		
-     	}
-     if(return_from_system  == 127)
-	{
-		//Child process created but the child shell terminated
-		syslog( LOG_ERR, "Child shell terminated");	
-		closelog();
-		return false; 	
-	}
-    
+    	if((return_from_system != 0) || (cmd == NULL))
+		return false;
+	else 
     //NO error occurs; system() returns success 
-    closelog();    
-    return true;
+   
+    		return true;
 }
 
 /**
@@ -78,67 +63,46 @@ bool do_exec(int count, ...)
     // and may be removed
     command[count] = command[count];
 
-    openlog();
-    pid_t return_from_fork = fork();
+     pid_t return_from_fork, result_from_wait;
+     int w_status;
+    openlog(NULL, 0, LOG_USER);
+	
+    return_from_fork = fork();
     if(return_from_fork == -1) 
     	{
 		//Child process could not be created 
 		syslog( LOG_ERR, "Error: %s", strerror(errno));
-		closelog();
 		return false;
 		     		
     	} 
-    if(return_from_fork == 0)
+    else if(return_from_fork == 0)
     	{
 		//Child process created 
-		syslog("Child process created");
+		syslog(LOG_ERR,"Child process created");
 		//call execv() 	
-		int return_excev = execv(command[0],command);
+		execv(command[0],command);
 		//returns only on failure		
-		if(return_execv == -1)
-			{
-				syslog(LOG_ERR, "Error: %s", strerror(errno));
-				closelog();
-				return false;	
-			}
+		exit(-1);
     	}
-    //call wait() form parent
-    int w_status;
-    pid_t result_from_wait = waitpid(pid,&w_status, 0);
-    if(result_from_wait == -1)
+     else
+     {
+    	//call wait() form parent
+    	
+    	result_from_wait = waitpid(return_from_fork,&w_status, 0);
+    	if(result_from_wait == -1)
 	{
 		//if error occurs 
 		syslog( LOG_ERR, "Error: %s", strerror(errno));
-		closelog();
 		return false;
 	}
-
-    //if no error check for status
-    if(WIFEXITED(w_status))
+	if(WIFEXITED(w_status))
 	{
-		syslog( LOG_ERR, "Child terminated normally: %s", WEXITSTATUS(w_status));
-		if(WEXITSTATUS(w_status != 0))
-			{
-				return false;
-			}
+		if(w_status)
+			return false;
+		else
+			return true;
 	}
-    else if(WIFSIGNALED(w_status))
-    	{
-    		syslog( LOG_ERR, "Child terminated by a signal: %s", WTERMSIG(w_status));
-		if(WCOREDUMP)
-		{
-			syslog( LOG_ERR, "Child produced a core dump");
-		}
-    	}
-    else if(WTFSTOPPED(w_status))
-    	{
-    		syslog( LOG_ERR, "The number of signal which caused the child to stop",  WSTOPSIG());
-    	}
-
-	if(WTFCONTINUED(w_status))
-		{
-			syslog( LOG_ERR, "Child continued");
-		}
+    }
 
     va_end(args);
     
@@ -166,77 +130,59 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
     // and may be removed
     command[count] = command[count];
 
+    pid_t return_from_fork, result_from_wait;
+    int w_status;
+    
     int fd = open("redirected.txt", O_WRONLY|O_TRUNC|O_CREAT, 0644);
-    if (fd < 0) { perror("open"); abort(); }
-
-    pid_t return_from_fork = fork();
-
+    if(fd == -1)
+    {
+    	perror("Error creating a file");
+	return false;
+    }
+    
+    return_from_fork = fork();
+	
     if(return_from_fork == -1) 
     	{
 		//Child process could not be created 
-		error("fork"); abort();
+		perror("fork"); 
 		return false;
 		     		
     	} 
-    if(return_from_fork == 0)
+    else if(return_from_fork == 0)
     	{
 		//Child process created 
-		if (dup2(fd, 1) < 0) { perror("dup2"); abort(); }
+		if (dup2(fd, 1) < 0) 
+		{ 
+			perror("dup2"); 
+			return false; 
+		}
+		close(fd);
 		//call execv() 	
-		int return_excev = execv(command[0],command);
-		//returns only on failure		
-		if(return_execv == -1)
-			{
-				perror("execvp"); abort();
-				close(fd);
-				return false;	
-			}
+		execv(command[0],command);
+		perror("execvp"); 
+		exit(-1);	
+			
     	}
-    //call wait() form parent
-    int w_status;
-    pid_t result_from_wait = waitpid(pid,&w_status, 0);
-    if(result_from_wait == -1)
-	{
-		//if error occurs 
-		perror( "Error: %d", errno);
-		close(fd);
-		return false;
-	}
-
-    //if no error check for status
-    if(WIFEXITED(w_status))
-	{
-		perror("Child terminated normally: %s", WEXITSTATUS(w_status));
-		close(fd);
-		if(WEXITSTATUS(w_status != 0))
-			{
+     else
+   	  {
+   	  	close(fd);
+    		result_from_wait = waitpid(return_from_fork,&w_status, 0);
+    		if(result_from_wait == -1)
+		{
+			//if error occurs 
+			syslog( LOG_ERR, "Error: %s", strerror(errno));
+			return false;
+		}
+		if(WIFEXITED(w_status))
+		{
+			if(w_status)
 				return false;
-			}
-	}
-    else if(WIFSIGNALED(w_status))
-    	{
-    		perror( "Child terminated by a signal: %s", WTERMSIG(w_status));
-		if(WCOREDUMP)
-		{
-			perror("Child produced a core dump");
-		}
-		close(fd);
-    	}
-    else if(WTFSTOPPED(w_status))
-    	{
-    		perror("The number of signal which caused the child to stop",  WSTOPSIG());
-		close(fd);
-    	}
-
-	if(WTFCONTINUED(w_status))
-		{
-			perror("Child continued");
-			close(fd);
-		}
-
-
-
-    va_end(args);
-
+			else
+				return true;
+		}	
+   	 }   
+   	 
+    va_end(args);	 
     return true;
 }
