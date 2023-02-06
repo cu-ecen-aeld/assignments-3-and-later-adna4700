@@ -73,15 +73,15 @@ git clone git://busybox.net/busybox.git
     cd busybox
     git checkout ${BUSYBOX_VERSION}
     # TODO:  Configure busybox
-     	make ARCH=$ARCH CROSS_COMPILE = ${CROSS_COMPILE} distclean
-        make ARCH=$ARCH CROSS_COMPILE = ${CROSS_COMPILE} defconfig  
+       make distclean
+       make defconfig 
 else
     cd busybox
 fi
-
+pwd
 # TODO: Make and install busybox
-make ARCH=$ARCH CROSS_COMPILE = ${CROSS_COMPILE}
-make ARCH=$ARCH CROSS_COMPILE = ${CROSS_COMPILE} install CONFIG_PREFIX=${OUTDIR}/rootfs
+make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE}
+make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} install CONFIG_PREFIX=${OUTDIR}/rootfs
 cd "${OUTDIR}/rootfs"
 
 echo "Library dependencies"
@@ -89,12 +89,15 @@ ${CROSS_COMPILE}readelf -a bin/busybox | grep "program interpreter"
 ${CROSS_COMPILE}readelf -a bin/busybox | grep "Shared library"
 
 # TODO: Add library dependencies to rootfs
-	export SYSROOT=$(${CROSS_COMPILE}gcc -print-sysroot)
-        cd ${OUTDIR}/rootfs
-        cp ${SYSROOT}/lib64/libm.so.6 lib64/
-        cp ${SYSROOT}/lib64/lib/ld-linux-aarch64.so.1 lib/
-        cp ${SYSROOT}/lib64/libresolv.so.2 lib64/
-        cp ${SYSROOT}/lib64/libc.so.6 lib64/
+	export SYSROOT=$(${CROSS_COMPILE}gcc --print-sysroot)
+        cd "${OUTDIR}/rootfs"
+	cp -a $SYSROOT/lib/ld-linux-aarch64.so.1 $OUTDIR/rootfs/lib
+        cp -a $SYSROOT/lib64/libm.so.6 $OUTDIR/rootfs/lib64
+        cp -a $SYSROOT/lib64/libresolv.so.2 $OUTDIR/rootfs/lib64
+        cp -a $SYSROOT/lib64/libc.so.6 $OUTDIR/rootfs/lib64
+        cp -a $SYSROOT/lib64/ld-2.31.so $OUTDIR/rootfs/lib64
+	cp -a $SYSROOT/lib64/libc-2.31.so $OUTDIR/rootfs/lib64
+        cp -a $SYSROOT/lib64/libresolv-2.31.so $OUTDIR/rootfs/lib64
 
 # TODO: Make device nodes
 	sudo mknod -m 666 dev/null c 1 3
@@ -102,9 +105,9 @@ ${CROSS_COMPILE}readelf -a bin/busybox | grep "Shared library"
 
 
 # TODO: Clean and build the writer utility
- 	cd ${FINDEER_APP_DIR}
+ 	cd ${FINDER_APP_DIR}
 	make clean
-	make CROSS_COMPILE = ${CROSS_COMPILE}
+	make CROSS_COMPILE=${CROSS_COMPILE}
          
 
 # TODO: Copy the finder related scripts and executables to the /home directory
