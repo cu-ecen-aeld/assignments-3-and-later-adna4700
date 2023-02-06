@@ -120,7 +120,8 @@ ${CROSS_COMPILE}readelf -a bin/busybox | grep "Shared library"
       cp autorun-qemu.sh "${OUTDIR}/rootfs/home"
 
 # TODO: Chown the root directory
-	sudo chown -R root: root *
+        cd "${OUTDIR}/rootfs"
+	sudo chown -R root:root *
 
 # TODO: Create initramfs.cpio.gz
 	cd "${OUTDIR}/rootfs"
