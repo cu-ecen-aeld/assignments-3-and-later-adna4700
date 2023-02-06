@@ -91,14 +91,6 @@ ${CROSS_COMPILE}readelf -a bin/busybox | grep "Shared library"
 # TODO: Add library dependencies to rootfs
 	export SYSROOT=$(${CROSS_COMPILE}gcc --print-sysroot)
         cd "${OUTDIR}/rootfs"
-	#cp -a $SYSROOT/lib/ld-linux-aarch64.so.1 $OUTDIR/rootfs/lib
-        #cp -a $SYSROOT/lib64/libm.so.6 $OUTDIR/rootfs/lib64
-        #cp -a $SYSROOT/lib64/libresolv.so.2 $OUTDIR/rootfs/lib64
-        #cp -a $SYSROOT/lib64/libc.so.6 $OUTDIR/rootfs/lib64
-        #cp -a $SYSROOT/lib64/ld-2.31.so $OUTDIR/rootfs/lib64
-	#cp -a $SYSROOT/lib64/libc-2.31.so $OUTDIR/rootfs/lib64
-        #cp -a $SYSROOT/lib64/libresolv-2.31.so $OUTDIR/rootfs/lib64
-
 	sudo cp -r $SYSROOT/lib64/* lib64
 	sudo cp -r $SYSROOT/lib/* lib
 
@@ -109,7 +101,8 @@ ${CROSS_COMPILE}readelf -a bin/busybox | grep "Shared library"
 
 # TODO: Clean and build the writer utility
  	cd ${FINDER_APP_DIR}
-	make clean
+	#make clean
+	rm -f *.o writer
 	make CROSS_COMPILE=${CROSS_COMPILE}
          
 
