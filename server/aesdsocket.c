@@ -209,9 +209,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    while(1) 
-    {
-        if(listen(sock_fd, BACKLOG) < 0)
+     if(listen(sock_fd, BACKLOG) < 0)
         {
            printf("Error in listening. Error code:%d\r\n",errno);
            syslog(LOG_ERR,"Error listening\r\n");
@@ -224,6 +222,10 @@ int main(int argc, char *argv[])
         {
             printf("Waiting for connections.....\r\n");
         }
+
+    while(1) 
+    {
+       
 
         printf("Before accept\r\n");
         cli_len = sizeof(client);
