@@ -338,13 +338,24 @@ int main(int argc, char *argv[])
         char *write_buffer = (char*) malloc (file_bytes);
 
         fseek(fp, 0, SEEK_SET);
-        fread(write_buffer, file_bytes, 1, fp);
+        if(fread(write_buffer, file_bytes, 1, fp) < 0)
+        {
+	    printf("Error in reading file\r\n");
+            //Log this info
+            syslog(LOG_INFO,"Error in reading file. Error: %d\r\n", errno);
+	    return -1;
+	}
         printf("buf: ");
         for (int i=0; i<(file_bytes);i++)
             printf("%c",write_buffer[i]);
 
-        write(cli_fd, write_buffer, file_bytes);
-
+        if(write(cli_fd, write_buffer, file_bytes) == -1)
+        {
+            printf("Error in writing to transmit buffer\r\n");
+            //Log this info
+            syslog(LOG_INFO,"Error in writing to transmit buffer. Error: %d\r\n", errno);
+            return -1;
+        }
         free(write_buffer);
         write_buffer = NULL;
         close(cli_fd);
