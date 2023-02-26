@@ -123,11 +123,14 @@ int main(int argc, char *argv[])
     signal(SIGTERM,signal_handler);
 
     //Daemon Check
-    bool is_daemon;
+    bool is_daemon = false;
 
     if(argc == 2)
     {
-        if(argv[1] == "-d")
+        printf("2 args detected\r\n");
+        
+       // if(argv[1] == "-d")
+       if(strcmp(argv[1], "-d") == 0)
         {
             is_daemon = true;
             printf("Program running as daemon\r\n");
@@ -225,8 +228,6 @@ int main(int argc, char *argv[])
 
     while(1) 
     {
-       
-
         printf("Before accept\r\n");
         cli_len = sizeof(client);
         printf("client len\r\n");
@@ -307,7 +308,7 @@ int main(int argc, char *argv[])
         for (int i=0; i<(file_bytes);i++)
             printf("%c",write_buffer[i]);
 
-        int ret_write = write(cli_fd, write_buffer, file_bytes);
+        write(cli_fd, write_buffer, file_bytes);
 
         free(write_buffer);
         write_buffer = NULL;
