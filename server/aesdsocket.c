@@ -95,14 +95,19 @@ int making_daemon()
     }
 
     //chdir Switching to the root directory as it will be a background process now
-    chdir("/");
-
-    //Redirect output to /dev/null
+    if(chdir("/") == -1)
+    {
+        printf("Changing directory failed");
+        syslog(LOG_ERR,"Changing directory ID failed Error: %d\r\n", errno);
+        //Should return -1
+	return -1;
+    }
+   	 //Redirect output to /dev/null
     open("/dev/null", O_RDWR);
-    //redirect stdout and stderror
+    	//redirect stdout and stderror
     dup(0);
     dup(0);
-
+	//2>/dev/null 1>/dev/null aesdsocket &
     return 0;
 }
 
@@ -173,7 +178,6 @@ int main(int argc, char *argv[])
     {
         printf("Error in socket set. Error code:%d\r\n",errno);
         syslog(LOG_ERR,"Error in socket()\r\n");
-      //  freeaddrinfo(servinfo); // free the linked-list
         return -1;
     }
     else
@@ -191,7 +195,6 @@ int main(int argc, char *argv[])
         printf("Binding failed\r\n");
         //print the error message
         syslog(LOG_ERR,"Bind failed. Error: %d\r\n", errno);
-        //freeaddrinfo(servinfo); // free the linked-list
         return (-1);
     }
     else
@@ -228,13 +231,10 @@ int main(int argc, char *argv[])
 
     while(1) 
     {
-        printf("Before accept\r\n");
+        
         cli_len = sizeof(client);
-        printf("client len\r\n");
 
         cli_fd = accept(sock_fd, (struct sockaddr*)&client, &cli_len);
-
-        printf("Accpt() ran\r\n");
 
         if (cli_fd < 0)
         {
@@ -260,9 +260,9 @@ int main(int argc, char *argv[])
         }
         else
         {
-            printf("Accepted connection from %s   %d\r\n", ip_addr,client_port);
+            printf("Accepted connection from %s %d\r\n", ip_addr,client_port);
             //Log this info
-            syslog(LOG_INFO,"Accepted connection from %s   %d\r\n", ip_addr,client_port);
+            syslog(LOG_INFO,"Accepted connection from %s %d\r\n", ip_addr,client_port);
         }
 
         //Reception and Transmission
