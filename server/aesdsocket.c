@@ -3,6 +3,7 @@ References: https://man7.org/linux/man-pages/man2/getsockname.2.html
 https://beej.us/guide/bgnet/html/#a-simple-stream-server
 https://www.geeksforgeeks.org/tcp-server-client-implementation-in-c/
 https://nullraum.net/how-to-create-a-daemon-in-c/
+https://stackoverflow.com/questions/14846768/in-c-how-do-i-redirect-stdout-fileno-to-dev-null-using-dup2-and-then-redirect
 */
 
 #include <stdio.h>
@@ -28,7 +29,10 @@ https://nullraum.net/how-to-create-a-daemon-in-c/
 #define MAX_SIZE 1024
 #define FILE_PATH "/var/tmp/aesdsocketdata"
 
+
 int sock_fd;
+//Daemon Check flag initialized to false
+bool is_daemon = false;
 
 void print_buf(char* buffer, int buffer_len);
 void graceful_exit();
@@ -46,7 +50,7 @@ void signal_handler(int signal)
 {
     if((signal == SIGINT) || (signal == SIGTERM))
     {
-        printf("Signal Caught is %d\n",signal);
+        printf("Signal Caught is %d, exiting\n",signal);
         close(sock_fd);
         exit(0);
     }
@@ -103,11 +107,41 @@ int making_daemon()
 	return -1;
     }
    	 //Redirect output to /dev/null
-    open("/dev/null", O_RDWR);
+    int devNull = open("/dev/null", O_RDWR);
+    if(devNull == -1)
+    {
+	 printf("Error in opening /dev/null");
+        syslog(LOG_ERR,"Error in opening /dev/null. Error: %d\r\n", errno);
+        //Should return -1
+	return -1;       
+    }
+
     	//redirect stdout and stderror
-    dup(0);
-    dup(0);
-	//2>/dev/null 1>/dev/null aesdsocket &
+    int dup2stdout = dup2(devNull, STDOUT_FILENO);
+    if(dup2stdout == -1)
+    {
+        printf("Error in dup2(devNull, STDOUT_FILENO)\n");
+        syslog(LOG_ERR,"Error in dup2(devNull, STDOUT_FILENO). Error: %d\r\n", errno);
+        //Should return -1
+	return -1; 
+    }
+    int dup2stderr = dup2(devNull, STDERR_FILENO);
+    if(dup2stderr == -1)
+    {
+        printf("Error in dup2(devNull, STDERR_FILENO)\n");
+        syslog(LOG_ERR,"Error in dup2(devNull, STDERR_FILENO). Error: %d\r\n", errno);
+        //Should return -1
+	return -1;
+    }
+    int dup2stdin = dup2(devNull, STDIN_FILENO);
+    if(dup2stdin == -1)
+    {
+        printf("Error in dup2(devNull, STDIN_FILENO)\n");
+        syslog(LOG_ERR,"Error in dup2(devNull, STDIN_FILENO). Error: %d\r\n", errno);
+        //Should return -1
+	return -1;
+    }
+    
     return 0;
 }
 
@@ -126,9 +160,6 @@ int main(int argc, char *argv[])
     //Registering error signals
     signal(SIGINT, signal_handler);
     signal(SIGTERM,signal_handler);
-
-    //Daemon Check
-    bool is_daemon = false;
 
     if(argc == 2)
     {
@@ -220,8 +251,7 @@ int main(int argc, char *argv[])
            printf("Error in listening. Error code:%d\r\n",errno);
            syslog(LOG_ERR,"Error listening\r\n");
            fclose(fp);
-           shutdown(sock_fd, SHUT_RDWR);
-           closelog();
+           graceful_exit();
            return -1;
         }
         else
@@ -268,17 +298,21 @@ int main(int argc, char *argv[])
         //Reception and Transmission
         while(1)
         {
+            //reads from the client, store it in a buffer
             buffer_len = read(cli_fd, buffer, MAX_SIZE);
-
+		
             if(buffer_len == 0)
             {
                 printf("Disconnected from client\n");
                 break;
             }
-
+	    
+	    //print the buffer contents- i.e. what client sends
             print_buf(buffer, buffer_len);
+	    //write it in the file
             fwrite(buffer, buffer_len, 1, fp);
-
+		
+	    //stop with newline character
             int newline_flag = 0;
             for(int i = 0; i < buffer_len; i++)
             {
@@ -293,6 +327,7 @@ int main(int argc, char *argv[])
                 break;
         }
         
+	
         int file_bytes = 0;
         char ch;
         fseek(fp, 0, SEEK_SET);
@@ -313,9 +348,11 @@ int main(int argc, char *argv[])
         free(write_buffer);
         write_buffer = NULL;
         close(cli_fd);
+	printf("Closed connection from %s %d\r\n", ip_addr,client_port);
+            //Log this info
+        syslog(LOG_INFO,"Closed connection from %s %d\r\n", ip_addr,client_port);
     }
     fclose(fp);
-    shutdown(sock_fd, SHUT_RDWR);
-    closelog();
+    graceful_exit();
     return 0;
 }
