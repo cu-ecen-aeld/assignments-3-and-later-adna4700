@@ -60,10 +60,16 @@ void signal_handler(int signal)
 
 void graceful_exit()
 {
-    //Closing both recv and send on the server socket
-    shutdown(sock_fd, SHUT_RDWR);
+    
     //Closing the server socket
-    close(sock_fd);
+    if(sock_fd)
+    {
+    	close(sock_fd);
+	//Closing both recv and send on the server socket
+    	shutdown(sock_fd, SHUT_RDWR);
+    }
+    if(fp !=NULL)    
+	fclose(fp);
     remove(FILE_PATH);	
     //Closing syslog
     closelog();
@@ -186,6 +192,7 @@ int main(int argc, char *argv[])
         //syslog the errors
         syslog(LOG_ERR,"Error opening the file. Error code:%d\r\n", errno);
         //return -1 on error
+	graceful_exit();
         return -1;
     }
 
@@ -197,7 +204,6 @@ int main(int argc, char *argv[])
         //syslog the errors
         syslog(LOG_ERR,"Error creating server socket. Error code:%d\r\n", errno);
         //return -1 on error
-        fclose(fp);
         graceful_exit();
         return -1;
     }
@@ -212,8 +218,7 @@ int main(int argc, char *argv[])
     {
         printf("Error in socket set. Error code:%d\r\n",errno);
         syslog(LOG_ERR,"Error in socket()\r\n");
-	fclose(fp);
-        graceful_exit();
+	graceful_exit();
         return -1;
     }
     else
@@ -231,7 +236,6 @@ int main(int argc, char *argv[])
         printf("Binding failed\r\n");
         //print the error message
         syslog(LOG_ERR,"Bind failed. Error: %d\r\n", errno);
-        fclose(fp);
         graceful_exit();
         return (-1);
     }
@@ -248,7 +252,6 @@ int main(int argc, char *argv[])
             printf("Failed to make a daemon process\r\n");
             //print the error message
             syslog(LOG_ERR,"Failed to make a daemon process. Error: %d\r\n", errno);
-            fclose(fp);
     	     graceful_exit();
             return (-1);
         }
@@ -258,7 +261,6 @@ int main(int argc, char *argv[])
         {
            printf("Error in listening. Error code:%d\r\n",errno);
            syslog(LOG_ERR,"Error listening\r\n");
-           fclose(fp);
            graceful_exit();
            return -1;
         }
@@ -344,6 +346,8 @@ int main(int argc, char *argv[])
             file_bytes++;
         }
         char *write_buffer = (char*) malloc (file_bytes);
+	if(write_buffer == NULL)
+	    return -1;
 
         fseek(fp, 0, SEEK_SET);
         if(fread(write_buffer, file_bytes, 1, fp) < 0)
@@ -351,7 +355,6 @@ int main(int argc, char *argv[])
 	    printf("Error in reading file\r\n");
             //Log this info
             syslog(LOG_INFO,"Error in reading file. Error: %d\r\n", errno);
-	    fclose(fp);
             graceful_exit();
 	    return -1;
 	}
@@ -364,7 +367,7 @@ int main(int argc, char *argv[])
             printf("Error in writing to transmit buffer\r\n");
             //Log this info
             syslog(LOG_INFO,"Error in writing to transmit buffer. Error: %d\r\n", errno);
-    	    fclose(fp);
+    	    
     	    graceful_exit();
             return -1;
         }
@@ -375,7 +378,6 @@ int main(int argc, char *argv[])
             //Log this info
         syslog(LOG_INFO,"Closed connection from %s %d\r\n", ip_addr,client_port);
     }
-    fclose(fp);
     graceful_exit();
     return 0;
 }
