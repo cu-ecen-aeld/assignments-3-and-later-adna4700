@@ -156,10 +156,9 @@ int making_daemon()
 int main(int argc, char *argv[])
 {
     int cli_fd, buffer_len;
-   
+    int index = 0;
     struct sockaddr_in server, client;
     socklen_t cli_len;
-    char buffer[MAX_SIZE];
 
     //Setting up syslog logging
 	openlog("aesdsocket",0,LOG_USER);
@@ -271,7 +270,9 @@ int main(int argc, char *argv[])
 
     while(1) 
     {
-        
+        //to track the length of the buffer
+	 static int len_tracker = 0;
+	    
         cli_len = sizeof(client);
 
         cli_fd = accept(sock_fd, (struct sockaddr*)&client, &cli_len);
@@ -305,40 +306,80 @@ int main(int argc, char *argv[])
             syslog(LOG_INFO,"Accepted connection from %s %d\r\n", ip_addr,client_port);
         }
 
+	//Initial malloc
+	    char *buffer = (char*) malloc(MAX_SIZE);
+	    len_tracker = MAX_SIZE;
+	    if(buffer == NULL)
+	    {
+           	printf("Error in Malloc\r\n");
+            	//Log this info
+            	syslog(LOG_INFO,"Error in Malloc\r\n");
+	    	return -1;
+	    }
+
+	    //memset the buffer so it has all zeros
+	     memset(buffer,0,MAX_SIZE);
+
         //Reception and Transmission
         while(1)
         {
-            //reads from the client, store it in a buffer
-            buffer_len = read(cli_fd, buffer, MAX_SIZE);
+	    
+	    //reads from the client, store it in a buffer
+            buffer_len = read(cli_fd, buffer + len_tracker - MAX_SIZE, MAX_SIZE);
 		
             if(buffer_len == 0)
             {
                 printf("Disconnected from client\n");
                 break;
             }
-	    
-	    //print the buffer contents- i.e. what client sends
-            print_buf(buffer, buffer_len);
-	    //write it in the file
-            fwrite(buffer, buffer_len, 1, fp);
-		
-	    //stop with newline character
-            int newline_flag = 0;
-            for(int i = 0; i < buffer_len; i++)
+	    if(buffer_len < 0)
+	    {
+	    	printf("Error in reading from the client\r\n");
+		break;
+	    }
+	
+            //stop with newline character
+            for(index = 0; index < buffer_len; index++)
             {
-                if (buffer[i] == '\n')
+                if (buffer[index + len_tracker - MAX_SIZE] == '\n')
                 {
-                    newline_flag = 1;
-                    break;
+		    break;
                 }
             }
+            
 
-            if (newline_flag)
-                break;
-        }
-        
-	
-        int file_bytes = 0;
+	   //if(buffer_len < MAX_SIZE)
+	    if(index < buffer_len)
+	   {	  
+	   	printf("2\n"); 	
+		//can write to file directly
+		//fwrite(buffer, buffer_len, 1, fp);
+		if(fwrite(buffer, len_tracker - MAX_SIZE + index + 1, 1, fp) == -1)
+		 {
+           		printf("Error in writing to the file\r\n");
+           		//Log this info
+           		syslog(LOG_INFO,"Error in writing to the file. Error: %d\r\n", errno);
+    	    		free(buffer);
+			buffer = NULL;
+    	    		graceful_exit();
+           		 return -1;
+      		  }
+      		  break;
+		
+	   }
+	   else
+	   {
+   		printf("3\n");
+           	len_tracker += MAX_SIZE;
+           	buffer = (char*)realloc(buffer,len_tracker);
+		  
+	   }
+	}
+	printf("1\n");
+	len_tracker = 0;
+	free(buffer);
+	buffer = NULL;
+	int file_bytes = 0;
         char ch;
         fseek(fp, 0, SEEK_SET);
         while(fread(&ch, 1, 1, fp) > 0)
@@ -355,6 +396,8 @@ int main(int argc, char *argv[])
 	    printf("Error in reading file\r\n");
             //Log this info
             syslog(LOG_INFO,"Error in reading file. Error: %d\r\n", errno);
+            free(write_buffer);
+	     write_buffer = NULL;   
             graceful_exit();
 	    return -1;
 	}
@@ -367,17 +410,20 @@ int main(int argc, char *argv[])
             printf("Error in writing to transmit buffer\r\n");
             //Log this info
             syslog(LOG_INFO,"Error in writing to transmit buffer. Error: %d\r\n", errno);
-    	    
+    	    free(write_buffer);
+	    write_buffer = NULL;   
     	    graceful_exit();
             return -1;
         }
-        free(write_buffer);
-        write_buffer = NULL;
-        close(cli_fd);
+      
+	free(write_buffer);
+	write_buffer = NULL;        
+	close(cli_fd);
 	printf("Closed connection from %s %d\r\n", ip_addr,client_port);
-            //Log this info
+        //Log this info
         syslog(LOG_INFO,"Closed connection from %s %d\r\n", ip_addr,client_port);
     }
     graceful_exit();
     return 0;
 }
+
