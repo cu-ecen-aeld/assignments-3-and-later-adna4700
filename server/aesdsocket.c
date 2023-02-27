@@ -31,6 +31,7 @@ https://stackoverflow.com/questions/14846768/in-c-how-do-i-redirect-stdout-filen
 
 
 int sock_fd;
+ FILE *fp;
 //Daemon Check flag initialized to false
 bool is_daemon = false;
 
@@ -63,7 +64,7 @@ void graceful_exit()
     shutdown(sock_fd, SHUT_RDWR);
     //Closing the server socket
     close(sock_fd);
-
+    remove(FILE_PATH);	
     //Closing syslog
     closelog();
 }
@@ -149,7 +150,7 @@ int making_daemon()
 int main(int argc, char *argv[])
 {
     int cli_fd, buffer_len;
-    FILE *fp;
+   
     struct sockaddr_in server, client;
     socklen_t cli_len;
     char buffer[MAX_SIZE];
@@ -196,6 +197,8 @@ int main(int argc, char *argv[])
         //syslog the errors
         syslog(LOG_ERR,"Error creating server socket. Error code:%d\r\n", errno);
         //return -1 on error
+        fclose(fp);
+        graceful_exit();
         return -1;
     }
     else
@@ -209,6 +212,8 @@ int main(int argc, char *argv[])
     {
         printf("Error in socket set. Error code:%d\r\n",errno);
         syslog(LOG_ERR,"Error in socket()\r\n");
+	fclose(fp);
+        graceful_exit();
         return -1;
     }
     else
@@ -226,6 +231,8 @@ int main(int argc, char *argv[])
         printf("Binding failed\r\n");
         //print the error message
         syslog(LOG_ERR,"Bind failed. Error: %d\r\n", errno);
+        fclose(fp);
+        graceful_exit();
         return (-1);
     }
     else
@@ -241,7 +248,8 @@ int main(int argc, char *argv[])
             printf("Failed to make a daemon process\r\n");
             //print the error message
             syslog(LOG_ERR,"Failed to make a daemon process. Error: %d\r\n", errno);
-        
+            fclose(fp);
+    	     graceful_exit();
             return (-1);
         }
     }
@@ -343,6 +351,8 @@ int main(int argc, char *argv[])
 	    printf("Error in reading file\r\n");
             //Log this info
             syslog(LOG_INFO,"Error in reading file. Error: %d\r\n", errno);
+	    fclose(fp);
+            graceful_exit();
 	    return -1;
 	}
         printf("buf: ");
@@ -354,6 +364,8 @@ int main(int argc, char *argv[])
             printf("Error in writing to transmit buffer\r\n");
             //Log this info
             syslog(LOG_INFO,"Error in writing to transmit buffer. Error: %d\r\n", errno);
+    	    fclose(fp);
+    	    graceful_exit();
             return -1;
         }
         free(write_buffer);
