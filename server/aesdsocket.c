@@ -107,7 +107,9 @@ void graceful_exit()
         // Closing both recv and send on the server socket    
     }
     if (fp != NULL)
+    {
         fclose(fp);
+    }
     remove(FILE_PATH);
     // Closing syslog
     pthread_mutex_destroy(&mutex);
@@ -226,7 +228,7 @@ void *thread_routine(void *client_parameters)
             parameters->thread_complete = true;
             if(buffer != NULL)
             {
-            free(buffer);
+              free(buffer);
             }
             buffer = NULL;
             graceful_exit();
@@ -436,7 +438,7 @@ void* timer_routine(void* mutex_t)
         long     tv_nsec;      
     };*/
     
-    struct timespec tp = {0,0};
+    // struct timespec tp = {0,0};
     /*The <time.h> header declares the structure tm, which includes at least the following members:
 
     int    tm_sec   seconds [0,61]
@@ -451,40 +453,46 @@ void* timer_routine(void* mutex_t)
     struct tm *time_local;
 
     //the count will be 10 as it will be ten sec delay
-    int ten_sec = 10;
+    // int ten_sec = 10;
     time_t the_time;
     
+    // while(1)
+    // {
+    // //get the status ogf the time
+    // if(clock_gettime(CLOCK_MONOTONIC, &tp) == -1)
+    // {
+    //     // printintg and syslogging the errors
+        
+    //     printf("Error in clock_gettime()\r\n");
+    //     syslog (LOG_ERR, "Error in clock_gettime()\r\n");
+    //     // graceful_exit();
+    //     continue;
+    // }
     while(1)
     {
-    //get the status ogf the time
-    if(clock_gettime(CLOCK_MONOTONIC, &tp) == -1)
-    {
-        // printintg and syslogging the errors
-        printf("Error in clock_gettime()\r\n");
-        syslog (LOG_ERR, "Error in clock_gettime()\r\n");
-        // graceful_exit();
-        continue;
-    }
+    sleep(10);
 
-    //generates 10 sec delay
-    while(ten_sec > 0)
-    {
-        ten_sec--;
-        tp.tv_sec = tp.tv_sec + 1;
-        tp.tv_nsec = tp.tv_nsec + 1000000;
+    // //generates 10 sec delay
+    // while(ten_sec > 0)
+    // {
+    //     ten_sec--;
+    //     tp.tv_sec = tp.tv_sec + 1;
+    //     tp.tv_nsec = tp.tv_nsec + 1000000000;
+        
 
-        if(clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &tp, NULL) > 0)
-        {
-            // printintg and syslogging the errors
-            printf("Error in clock_nanosleep()\r\n");
-            syslog (LOG_ERR, "Error in clock_nanosleep()\r\n");
-            graceful_exit();   
-            break;
-        }
-    }
+    //     if(clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &tp, NULL) > 0)
+    //     {
+    //         // printintg and syslogging the errors
+    //         printf("Error in clock_nanosleep()\r\n");
+    //         perror("clock_nanosleep:");
+    //         syslog (LOG_ERR, "Error in clock_nanosleep()\r\n");
+    //         graceful_exit();   
+    //         break;
+    //     }
+    // }
 
-    if(ten_sec <= 0)
-    {
+    // if(ten_sec <= 0)
+    // {
         char timer_buffer[150];
         memset(timer_buffer, 0, sizeof(timer_buffer)); 
         time(&the_time);
@@ -518,6 +526,7 @@ void* timer_routine(void* mutex_t)
         
         //unlocking the mutex
         mutex_lock = pthread_mutex_unlock(mutex);
+        if(mutex_lock != 0)
         {
             printf("Error unlocking the mutex at 530 line %d\r\n", errno);
             // syslog the errors
@@ -528,9 +537,9 @@ void* timer_routine(void* mutex_t)
         //close(data->client_fd);
     }
 
-    }
+    // }
     //data->thread_complete = true;
-    pthread_exit(NULL);
+    // pthread_exit(NULL);
     return NULL;
 }
 
@@ -679,7 +688,6 @@ int main(int argc, char *argv[])
         char address[30]; // To store the IP address converted into string
 
         // const char *inet_ntop(int af, const void *restrict src,
-        //    char *restrict dst, socklen_t size);
         const char *ip_addr = inet_ntop(AF_INET, &client.sin_addr, address, sizeof(address));
         int client_port = htons(client.sin_port);
         if (ip_addr == NULL)
@@ -694,6 +702,11 @@ int main(int argc, char *argv[])
         }
 
         threads_node = (node *)malloc(sizeof(node));
+        if(threads_node == NULL)
+        {
+              printf("Error in obtaining ip address of the client\r\n");
+              graceful_exit();
+        }
         SLIST_INSERT_HEAD(&head, threads_node, entry);
         threads_node->client_parameters.client_fd = cli_fd;
         threads_node->client_parameters.address = client;
@@ -712,7 +725,7 @@ int main(int argc, char *argv[])
                 close(threads_node->client_parameters.client_fd);
                 printf("Closed connection from %s %d\r\n", ip_addr, client_port);
                 // Log this info
-                syslog(LOG_INFO, "Closed connection from %s %d\r\n", ip_addr, client_port);    
+              //  syslog(LOG_INFO, "Closed connection from %s %d\r\n", ip_addr, client_port);    
             }
         }
 
