@@ -293,9 +293,6 @@ void *thread_routine(void *client_parameters)
                 printf("buf from fwrite to a file from buffer: ");
                 for (int i = 0; i < (len_tracker - MAX_SIZE + index + 1); i++)
                     printf("%c", buffer[i]);
-
-                printf("Gonna break now\r\n");
-                 break;
                  
         }
         else
@@ -322,7 +319,7 @@ void *thread_routine(void *client_parameters)
         {
             printf("Error in releasing the mutex\r\n");
             // Log this info
-            syslog(LOG_INFO, "Error in releasing the mutex. Error: %d\r\n", errno);
+            syslog(LOG_INFO, "Error in releasing the mutex at 322 line. Error: %d\r\n", errno);
             if(buffer != NULL)
             {
             free(buffer);
@@ -426,11 +423,11 @@ void *thread_routine(void *client_parameters)
     return NULL;
 }
 
-void* timer_routine(void* client_parameters)
+void* timer_routine(void* mutex_t)
 {
    //parameters to accesss
-   client_thread *data = NULL;
-   data = (client_thread*)client_parameters; 
+   pthread_mutex_t *mutex = NULL;
+   mutex = (pthread_mutex_t*)mutex_t; 
    
     //Initializing the timespec strcut to zero
     /*
@@ -493,29 +490,20 @@ void* timer_routine(void* client_parameters)
         time(&the_time);
         time_local = localtime(&the_time);
 
-        // open the file 
-        fp = fopen(FILE_PATH, "w+");
-        if (fp == NULL)
-        {
-        printf("Error opening file\r\n");
-        // syslog the errors
-        syslog(LOG_ERR, "Error opening the file. Error code:%d\r\n", errno);
-        break;
-        }
-        
-        //store the length of the timing message
         size_t length = strftime(timer_buffer, sizeof(timer_buffer),"timestamp: %Y \t %b \t %d \t %H:%M:%S\r\n",time_local);
 
         //locking the mutex
-        int mutex_lock = pthread_mutex_lock(data->mutex);
+        int mutex_lock = pthread_mutex_lock(mutex);
         if(mutex_lock != 0)
         {
-            printf("Error locking the mutex\r\n");
+            printf("Error locking the mutex on line 510\r\n");
             // syslog the errors
             syslog(LOG_ERR, "Error locking the mutex. Error code:%d\r\n", errno);
-            fclose(fp);
+           // fclose(fp);......513
+           pthread_exit(NULL);
         }
 
+        printf("timer locked te mutex\r\n");
         //write to the file
         fseek(fp, 0, SEEK_END);
 
@@ -525,21 +513,23 @@ void* timer_routine(void* client_parameters)
             // Log this info
             syslog(LOG_INFO, "Error in writing timer to the file. Error: %d\r\n", errno);
             graceful_exit();
+            pthread_exit(NULL);
         }
         
         //unlocking the mutex
-        mutex_lock = pthread_mutex_unlock(data->mutex);
+        mutex_lock = pthread_mutex_unlock(mutex);
         {
-            printf("Error unlocking the mutex\r\n");
+            printf("Error unlocking the mutex at 530 line %d\r\n", errno);
             // syslog the errors
             syslog(LOG_ERR, "Error unlocking the mutex. Error code:%d\r\n", errno);
-            fclose(fp);
+            //fclose(fp);
+            pthread_exit(NULL);
         }
-        close(data->client_fd);
+        //close(data->client_fd);
     }
 
     }
-    data->thread_complete = true;
+    //data->thread_complete = true;
     pthread_exit(NULL);
     return NULL;
 }
@@ -666,7 +656,7 @@ int main(int argc, char *argv[])
 
     //timer thread created
     pthread_t timer_thread_id;
-   // pthread_create(&timer_thread_id, NULL, timer_routine, NULL);
+    pthread_create(&timer_thread_id, NULL, timer_routine, &mutex);
 
     while (1)
     {
@@ -727,7 +717,7 @@ int main(int argc, char *argv[])
         }
 
     }
-   // pthread_join(timer_thread_id, NULL);
+    pthread_join(timer_thread_id, NULL);
     while(!SLIST_EMPTY(&head))
     {
         threads_node = SLIST_FIRST(&head);
