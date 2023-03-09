@@ -38,6 +38,12 @@ struct aesd_buffer_entry *aesd_circular_buffer_find_entry_offset_for_fpos(struct
     if(buffer == NULL || entry_offset_byte_rtn == NULL)
         return NULL;
 
+    //If buffer is empty return NULL
+    if((buffer->in_offs ==  buffer->out_offs) && (buffer->full == false))
+    {
+        return NULL;
+    }
+
     size_t find = char_offset;
     size_t trace = 0;
     int i=0;
