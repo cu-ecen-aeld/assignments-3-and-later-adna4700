@@ -91,8 +91,16 @@ int aesd_circular_buffer_add_entry(struct aesd_circular_buffer *buffer, const st
     else
     {
         //buffer is full
-        buffer->in_offs += 1;
-        buffer->out_offs += 1;
+        if(buffer->in_offs == AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED)
+            buffer->in_offs = 0;
+        else
+            buffer->in_offs += 1;
+        
+        if(buffer->out_offs == AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED)
+            buffer->out_offs = 0;
+        else
+            buffer->out_offs += 1;
+        
         //it is no more full now
         buffer->full = false; 
         return 0;
