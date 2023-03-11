@@ -1,4 +1,15 @@
 #include "systemcalls.h"
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <syslog.h>
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 /**
  * @param cmd the command to execute with system()
@@ -8,16 +19,19 @@
  *   value was returned by the command issued in @param cmd.
 */
 bool do_system(const char *cmd)
-{
+{   
+    //setting up system log
+  
 
-/*
- * TODO  add your code here
- *  Call the system() function with the command set in the cmd
- *   and return a boolean true if the system() call completed with success
- *   or false() if it returned a failure
-*/
+    int return_from_system = system(cmd);
 
-    return true;
+    
+    	if((return_from_system != 0) || (cmd == NULL))
+		return false;
+	else 
+    //NO error occurs; system() returns success 
+   
+    		return true;
 }
 
 /**
@@ -49,18 +63,50 @@ bool do_exec(int count, ...)
     // and may be removed
     command[count] = command[count];
 
-/*
- * TODO:
- *   Execute a system command by calling fork, execv(),
- *   and wait instead of system (see LSP page 161).
- *   Use the command[0] as the full path to the command to execute
- *   (first argument to execv), and use the remaining arguments
- *   as second argument to the execv() command.
- *
-*/
+     pid_t return_from_fork, result_from_wait;
+     int w_status;
+    openlog(NULL, 0, LOG_USER);
+	
+    return_from_fork = fork();
+    if(return_from_fork == -1) 
+    	{
+		//Child process could not be created 
+		syslog( LOG_ERR, "Error: %s", strerror(errno));
+		return false;
+		     		
+    	} 
+    else if(return_from_fork == 0)
+    	{
+		//Child process created 
+		syslog(LOG_ERR,"Child process created");
+		//call execv() 	
+		execv(command[0],command);
+		//returns only on failure		
+		exit(-1);
+    	}
+     else
+     {
+    	//call wait() form parent
+    	
+    	result_from_wait = waitpid(return_from_fork,&w_status, 0);
+    	if(result_from_wait == -1)
+	{
+		//if error occurs 
+		syslog( LOG_ERR, "Error: %s", strerror(errno));
+		return false;
+	}
+	if(WIFEXITED(w_status))
+	{
+		if(w_status)
+			return false;
+		else
+			return true;
+	}
+    }
 
     va_end(args);
-
+    
+    closelog();
     return true;
 }
 
@@ -84,16 +130,59 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
     // and may be removed
     command[count] = command[count];
 
-
-/*
- * TODO
- *   Call execv, but first using https://stackoverflow.com/a/13784315/1446624 as a refernce,
- *   redirect standard out to a file specified by outputfile.
- *   The rest of the behaviour is same as do_exec()
- *
-*/
-
-    va_end(args);
-
+    pid_t return_from_fork, result_from_wait;
+    int w_status;
+    
+    int fd = open(outputfile, O_WRONLY|O_TRUNC|O_CREAT, 0644);
+    if(fd == -1)
+    {
+    	perror("Error creating a file");
+	return false;
+    }
+    
+    return_from_fork = fork();
+	
+    if(return_from_fork == -1) 
+    	{
+		//Child process could not be created 
+		perror("fork"); 
+		return false;
+		     		
+    	} 
+    else if(return_from_fork == 0)
+    	{
+		//Child process created 
+		if (dup2(fd, 1) < 0) 
+		{ 
+			perror("dup2"); 
+			return false; 
+		}
+		close(fd);
+		//call execv() 	
+		execv(command[0],command);
+		perror("execvp"); 
+		exit(-1);	
+			
+    	}
+     else
+   	  {
+   	  	close(fd);
+    		result_from_wait = waitpid(return_from_fork,&w_status, 0);
+    		if(result_from_wait == -1)
+		{
+			//if error occurs 
+			syslog( LOG_ERR, "Error: %s", strerror(errno));
+			return false;
+		}
+		if(WIFEXITED(w_status))
+		{
+			if(w_status)
+				return false;
+			else
+				return true;
+		}	
+   	 }   
+   	 
+    va_end(args);	 
     return true;
 }
