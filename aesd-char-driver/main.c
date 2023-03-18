@@ -18,7 +18,11 @@
 #include <linux/cdev.h>
 #include <linux/fs.h> // file_operations
 #include "aesdchar.h"
+<<<<<<< HEAD
 #include "aesd-circular-buffer.h"
+=======
+
+>>>>>>> 0776985a8b774ae31d5cbff0e4761940b7e9c3eb
 #include <linux/string.h>
 #include <linux/uaccess.h>
 #include <linux/slab.h> //memory allocation and deallocation
@@ -39,14 +43,21 @@ int aesd_open(struct inode *inode, struct file *filp)
      */
 
     struct aesd_dev *char_pt;
+<<<<<<< HEAD
     PDEBUG("open");
+=======
+>>>>>>> 0776985a8b774ae31d5cbff0e4761940b7e9c3eb
     //char_pt = container_of(inode->i_cdev, struct aesd_dev, cdev);
     //Uses the container_of macro to obtain a pointer to the struct aesd_dev structure associated with the character device file represented by the given inode.
     // The container_of macro takes three arguments: the first argument is a pointer to a member of the structure (in this case, inode->i_cdev)
     //the second argument is the type of the structure (in this case, struct aesd_dev)
     //the third argument is the name of the member in the structure (in this case, cdev).
     char_pt = container_of(inode->i_cdev, struct aesd_dev, cdev);
+<<<<<<< HEAD
     filp->private_data = char_pt;
+=======
+    flip->private_data = char_pt;
+>>>>>>> 0776985a8b774ae31d5cbff0e4761940b7e9c3eb
 
     return 0;
 }
@@ -72,27 +83,43 @@ ssize_t aesd_read(struct file *filp, char __user *buf, size_t count,
     
     
     PDEBUG("read %zu bytes with offset %lld",count,*f_pos);
+<<<<<<< HEAD
     printk(KERN_DEBUG "read %zu bytes with offset %lld",count,*f_pos);
+=======
+    printk(KREN_DEBUG "read %zu bytes with offset %lld",count,*f_pos);
+>>>>>>> 0776985a8b774ae31d5cbff0e4761940b7e9c3eb
 
     /**
      * TODO: handle read
      */
 
     // indicates a "bad address" error, meaning that the function encountered a memory access violation or invalid memory address.
+<<<<<<< HEAD
     if((filp ==  NULL) || (buf == NULL) ||  (f_pos == NULL))
+=======
+    if((flip ==  NULL) || (buf == NULL) ||  (f_pos == NULL))
+>>>>>>> 0776985a8b774ae31d5cbff0e4761940b7e9c3eb
         return - EFAULT;
 
     if(count == 0)
         return retval;
 
+<<<<<<< HEAD
     
+=======
+    struct aesd_dev *device = (struct aesd_dev *) flip->private_data;
+>>>>>>> 0776985a8b774ae31d5cbff0e4761940b7e9c3eb
 
     //lock the device
     //return 0 if the mutex has been acquired 
     if(mutex_lock_interruptible(&device->mutex_lock))
     {
        // If the process is interrupted, the function returns -ERESTARTSYS, indicating that the system call should be restarted
+<<<<<<< HEAD
        printk(KERN_DEBUG "Mutex Lock Failed");
+=======
+       printk(KREN_DEBUG "Mutex Lock Failed");
+>>>>>>> 0776985a8b774ae31d5cbff0e4761940b7e9c3eb
        PDEBUG("Mutex Lock Failed");
        retval = -ERESTARTSYS;
        return retval;
@@ -100,6 +127,13 @@ ssize_t aesd_read(struct file *filp, char __user *buf, size_t count,
 
     //struct aesd_buffer_entry *aesd_circular_buffer_find_entry_offset_for_fpos(struct aesd_circular_buffer *buffer,
     //   size_t char_offset, size_t *entry_offset_byte_rtn );
+<<<<<<< HEAD
+=======
+    size_t entry_offset = 0;
+    struct aesd_buffer_entry *buffer_entry;
+    size_t bytes_count_read = 0;
+    size_t rem_count=0;
+>>>>>>> 0776985a8b774ae31d5cbff0e4761940b7e9c3eb
 
     buffer_entry = aesd_circular_buffer_find_entry_offset_for_fpos(&device->circular_buff, *f_pos, &entry_offset);
     if(buffer_entry == NULL)
@@ -124,7 +158,11 @@ ssize_t aesd_read(struct file *filp, char __user *buf, size_t count,
     if(copy_to_user(buf, buffer_entry->buffptr + entry_offset, bytes_count_read))
     {
         retval = -EFAULT;
+<<<<<<< HEAD
         goto exiting;
+=======
+        goto exiting:
+>>>>>>> 0776985a8b774ae31d5cbff0e4761940b7e9c3eb
     }
 
     *f_pos += bytes_count_read;
@@ -145,24 +183,41 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
     struct aesd_dev *device;
     const char* new_string_entry;
     PDEBUG("write %zu bytes with offset %lld",count,*f_pos);
+<<<<<<< HEAD
     printk(KERN_DEBUG "write %zu bytes with offset %lld",count,*f_pos);
+=======
+    printk(KREN_DEBUG "write %zu bytes with offset %lld",count,*f_pos);
+>>>>>>> 0776985a8b774ae31d5cbff0e4761940b7e9c3eb
     /**
      * TODO: handle write
      */
 
     // indicates a "bad address" error, meaning that the function encountered a memory access violation or invalid memory address.
+<<<<<<< HEAD
     if((filp ==  NULL) || (buf == NULL) ||  (f_pos == NULL))
+=======
+    if((flip ==  NULL) || (buf == NULL) ||  f_pos == NULL))
+>>>>>>> 0776985a8b774ae31d5cbff0e4761940b7e9c3eb
         return - EFAULT;
 
     if(count == 0)
         return retval;
 
+<<<<<<< HEAD
     
+=======
+    struct aesd_dev *device = (struct aesd_dev *) flip->private_data;
+    size_t result_copy;
+>>>>>>> 0776985a8b774ae31d5cbff0e4761940b7e9c3eb
     
     if(mutex_lock_interruptible(&device->mutex_lock))
     {
        // If the process is interrupted, the function returns -ERESTARTSYS, indicating that the system call should be restarted
+<<<<<<< HEAD
        printk(KERN_DEBUG "Mutex Lock Failed");
+=======
+       printk(KREN_DEBUG "Mutex Lock Failed");
+>>>>>>> 0776985a8b774ae31d5cbff0e4761940b7e9c3eb
        PDEBUG("Mutex Lock Failed");
        retval = -ERESTARTSYS;
        return retval;
@@ -178,7 +233,11 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
         if(device->new_string.buffptr == NULL)
         {
             //means memory not allocated
+<<<<<<< HEAD
             printk(KERN_DEBUG "Memory allocation Failed");
+=======
+            printk(KREN_DEBUG "Memory allocation Failed");
+>>>>>>> 0776985a8b774ae31d5cbff0e4761940b7e9c3eb
             PDEBUG("Memory allocation Failed");
             goto exiting;
         }
@@ -188,19 +247,32 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
             device->new_string.buffptr = krealloc(device->new_string.buffptr, device->new_string.size + count, GFP_KERNEL);
             if(device->new_string.buffptr == NULL)
             {
+<<<<<<< HEAD
                 printk(KERN_DEBUG "Memory allocation Failed");
+=======
+                printk(KREN_DEBUG "Memory allocation Failed");
+>>>>>>> 0776985a8b774ae31d5cbff0e4761940b7e9c3eb
                 PDEBUG("Memory allocation Failed");
                 goto exiting; 
             }
         }
 
         //copy data from the user
+<<<<<<< HEAD
         data_recv = copy_from_user((void *)(device->new_string.buffptr + device->new_string.size), buf, count);
+=======
+        size_t data_recv = copy_from_user((void *)(device->new_string.buffptr + device->new_string.size), buf, count);
+>>>>>>> 0776985a8b774ae31d5cbff0e4761940b7e9c3eb
 
         retval = count - data_recv;
         device->new_string.size += retval;
 
+<<<<<<< HEAD
         if(strchr((char*)(device->new_string.buffptr), '\n'))
+=======
+        const char* new_string_entry;
+        if(memchr(device->new_string.buffptr, '\n', device->new_string.size))
+>>>>>>> 0776985a8b774ae31d5cbff0e4761940b7e9c3eb
         {
             new_string_entry = aesd_circular_buffer_add_entry(&device->circular_buff, &device->new_string);
             if(new_string_entry)
@@ -212,12 +284,20 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
             device->new_string.buffptr = NULL;
             device->new_string.size = 0;
         }
+<<<<<<< HEAD
 
     }
             
     exiting:
     mutex_unlock(&device->mutex_lock);
     return retval;
+=======
+        
+        exiting:
+        mutex_unlock(&device->mutex_lock);
+        return retval;
+    }
+>>>>>>> 0776985a8b774ae31d5cbff0e4761940b7e9c3eb
 }
 
 struct file_operations aesd_fops = {
@@ -262,7 +342,11 @@ int aesd_init_module(void)
      */
 
     //initialize the mutex
+<<<<<<< HEAD
     mutex_init(&(aesd_device.mutex_lock));
+=======
+    mutex_init(&(aesd_device.lock));
+>>>>>>> 0776985a8b774ae31d5cbff0e4761940b7e9c3eb
 
 
     result = aesd_setup_cdev(&aesd_device);
@@ -282,7 +366,11 @@ void aesd_cleanup_module(void)
     struct aesd_buffer_entry *buff_entry = NULL;
 
     cdev_del(&aesd_device.cdev);
+<<<<<<< HEAD
     //kfree(aesd_device.cdev);
+=======
+    kfree(aesd_device.cdev);
+>>>>>>> 0776985a8b774ae31d5cbff0e4761940b7e9c3eb
 
     /**
      * TODO: cleanup AESD specific poritions here as necessary
