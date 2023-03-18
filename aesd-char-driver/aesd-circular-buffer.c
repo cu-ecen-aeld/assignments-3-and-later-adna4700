@@ -30,10 +30,11 @@
  * @return the struct aesd_buffer_entry structure representing the position described by char_offset, or
  * NULL if this position is not available in the buffer (not enough data is written).
  */
+
 struct aesd_buffer_entry *aesd_circular_buffer_find_entry_offset_for_fpos(struct aesd_circular_buffer *buffer,
             size_t char_offset, size_t *entry_offset_byte_rtn )
 {
-    /**
+    /*
     * TODO: implement per description
     */
 
@@ -159,23 +160,26 @@ struct aesd_buffer_entry *aesd_circular_buffer_find_entry_offset_for_fpos(struct
 * Any necessary locking must be handled by the caller
 * Any memory referenced in @param add_entry must be allocated by and/or must have a lifetime managed by the caller.
 */
-int aesd_circular_buffer_add_entry(struct aesd_circular_buffer *buffer, const struct aesd_buffer_entry *add_entry)
+const char* aesd_circular_buffer_add_entry(struct aesd_circular_buffer *buffer, const struct aesd_buffer_entry *add_entry)
 {
     /**
     * TODO: implement per description
     */
-    
+    const char* return_buffer = NULL;
+
     if(buffer == NULL || add_entry == NULL || add_entry->size == 0 || add_entry->buffptr == NULL)
-        return -1;
+        return return_buffer;
 
     //else we can add doesn't matter if full or not 
    
-    buffer->entry[buffer->in_offs].buffptr = add_entry->buffptr;
-    buffer->entry[buffer->in_offs].size = add_entry->size; 
+
  
 
     if(buffer->full == false)
     {
+        buffer->entry[buffer->in_offs].buffptr = add_entry->buffptr;
+        buffer->entry[buffer->in_offs].size = add_entry->size; 
+       
         if(buffer->in_offs == (AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED - 1))
             buffer->in_offs  = 0;
         else
@@ -184,17 +188,12 @@ int aesd_circular_buffer_add_entry(struct aesd_circular_buffer *buffer, const st
         if(buffer->in_offs == buffer->out_offs)
             buffer->full = true;
 
-        return 0;
+       
     }
     else
     {
         //buffer is full
-        if(buffer->in_offs == (AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED - 1))
-            buffer->in_offs = 0;
-        else
-            buffer->in_offs += 1;
-        
-        printf("New in_offs is %d\r\n", buffer->in_offs);
+        return_buffer =  buffer->entry[buffer->out_offs].buffptr;
 
         if(buffer->out_offs == (AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED - 1))
             buffer->out_offs = 0;
@@ -202,10 +201,19 @@ int aesd_circular_buffer_add_entry(struct aesd_circular_buffer *buffer, const st
             buffer->out_offs += 1;
 
         printf("New out_offs is %d\r\n", buffer->out_offs);
-       
-        return 0;
-    }
 
+        buffer->entry[buffer->in_offs].buffptr = add_entry->buffptr;
+        buffer->entry[buffer->in_offs].size = add_entry->size; 
+
+        if(buffer->in_offs == (AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED - 1))
+            buffer->in_offs = 0;
+        else
+            buffer->in_offs += 1;
+        
+        printf("New in_offs is %d\r\n", buffer->in_offs);
+           
+    }
+    return return_buffer;
 }
 
 /**
