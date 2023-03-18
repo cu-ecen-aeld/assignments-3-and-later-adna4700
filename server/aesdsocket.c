@@ -671,9 +671,11 @@ int main(int argc, char *argv[])
         printf("Waiting for connections.....\r\n");
     }
 
+#if (USE_AESD_CHAR_DEVICE == 0)
     //timer thread created
-    //pthread_t timer_thread_id;
-   // pthread_create(&timer_thread_id, NULL, timer_routine, &mutex);
+    pthread_t timer_thread_id;
+    pthread_create(&timer_thread_id, NULL, timer_routine, &mutex);
+#endif
 
     while (1)
     {
@@ -738,7 +740,10 @@ int main(int argc, char *argv[])
         }
 
     }
+#if(USE_AESD_CHAR_DEVICE == 0)
     pthread_join(timer_thread_id, NULL);
+#endif
+
     while(!SLIST_EMPTY(&head))
     {
         threads_node = SLIST_FIRST(&head);
