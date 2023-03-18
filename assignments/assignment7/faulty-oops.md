@@ -1,6 +1,6 @@
-#Faulty oops analysis:
+# Faulty oops analysis:
 
-##OUTPUT FROM ./runqemu.sh
+## OUTPUT FROM ./runqemu.sh
 #  echo “hello_world” > /dev/faulty
 Unable to handle kernel NULL pointer dereference at virtual address 0000000000000000
 Mem abort info:
@@ -68,7 +68,7 @@ ssize_t faulty_write (struct file *filp, const char __user *buf, size_t count,
 
 This shows we are trying to write to a NULL pointer
 
-#Objectdump:
+# Objectdump:
 
 faulty.ko:     file format elf64-littleaarch64
 
@@ -337,7 +337,7 @@ Disassembly of section .comment:
   60:   00302e33        .inst   0x00302e33 ; NYI
 
 
- #Analysis of objdump
+ # Analysis of objdump
  Disassembly of section .text:
 
 0000000000000000 <faulty_write>:
