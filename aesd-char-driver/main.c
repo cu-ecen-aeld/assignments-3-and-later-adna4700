@@ -213,7 +213,7 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
                 kfree(new_string_entry);
             }
             //Clear entry parameters
-            //device->new_string.buffptr = NULL;
+            device->new_string.buffptr = NULL;
             device->new_string.size = 0;
         }
 
@@ -267,7 +267,7 @@ int aesd_init_module(void)
 
     //initialize the mutex
     mutex_init(&(aesd_device.mutex_lock));
-
+    aesd_circular_buffer_init(&aesd_device.circular_buff);
 
     result = aesd_setup_cdev(&aesd_device);
 

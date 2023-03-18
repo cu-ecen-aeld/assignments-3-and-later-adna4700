@@ -181,16 +181,15 @@ const char* aesd_circular_buffer_add_entry(struct aesd_circular_buffer *buffer, 
 
     //else we can add doesn't matter if full or not 
    
-        buffer->entry[buffer->in_offs].buffptr = add_entry->buffptr;
-        buffer->entry[buffer->in_offs].size = add_entry->size; 
-
- 
+       
 
     if(buffer->full == false)
     {
         //buffer->entry[buffer->in_offs].buffptr = add_entry->buffptr;
         //buffer->entry[buffer->in_offs].size = add_entry->size; 
-       
+        buffer->entry[buffer->in_offs].buffptr = add_entry->buffptr;
+        buffer->entry[buffer->in_offs].size = add_entry->size; 
+        
         if(buffer->in_offs == (AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED - 1))
             buffer->in_offs  = 0;
         else
@@ -206,6 +205,9 @@ const char* aesd_circular_buffer_add_entry(struct aesd_circular_buffer *buffer, 
         //buffer is full
         return_buffer =  buffer->entry[buffer->in_offs].buffptr;
 
+        buffer->entry[buffer->in_offs].buffptr = add_entry->buffptr;
+        buffer->entry[buffer->in_offs].size = add_entry->size; 
+
         if(buffer->out_offs == (AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED - 1))
             buffer->out_offs = 0;
         else
@@ -213,8 +215,7 @@ const char* aesd_circular_buffer_add_entry(struct aesd_circular_buffer *buffer, 
 
        // printf("New out_offs is %d\r\n", buffer->out_offs);
 
-        //buffer->entry[buffer->in_offs].buffptr = add_entry->buffptr;
-        //buffer->entry[buffer->in_offs].size = add_entry->size; 
+
 
         if(buffer->in_offs == (AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED - 1))
             buffer->in_offs = 0;
