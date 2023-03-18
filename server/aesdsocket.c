@@ -672,8 +672,8 @@ int main(int argc, char *argv[])
     }
 
     //timer thread created
-    pthread_t timer_thread_id;
-    pthread_create(&timer_thread_id, NULL, timer_routine, &mutex);
+    //pthread_t timer_thread_id;
+   // pthread_create(&timer_thread_id, NULL, timer_routine, &mutex);
 
     while (1)
     {

@@ -38,14 +38,14 @@ int aesd_open(struct inode *inode, struct file *filp)
      * TODO: handle open
      */
 
-    struct aesd_dev *char_pt = NULL;
+    struct aesd_dev *char_pt;
     //char_pt = container_of(inode->i_cdev, struct aesd_dev, cdev);
     //Uses the container_of macro to obtain a pointer to the struct aesd_dev structure associated with the character device file represented by the given inode.
     // The container_of macro takes three arguments: the first argument is a pointer to a member of the structure (in this case, inode->i_cdev)
     //the second argument is the type of the structure (in this case, struct aesd_dev)
     //the third argument is the name of the member in the structure (in this case, cdev).
     char_pt = container_of(inode->i_cdev, struct aesd_dev, cdev);
-    flip->private_data =char_pt;
+    flip->private_data = char_pt;
 
     return 0;
 }
@@ -71,7 +71,7 @@ ssize_t aesd_read(struct file *filp, char __user *buf, size_t count,
      */
 
     // indicates a "bad address" error, meaning that the function encountered a memory access violation or invalid memory address.
-    if((flip ==  NULL) || (buf == NULL) ||  f_pos == NULL))
+    if((flip ==  NULL) || (buf == NULL) ||  (f_pos == NULL))
         return - EFAULT;
 
     if(count == 0)
@@ -276,7 +276,7 @@ void aesd_cleanup_module(void)
 
     cdev_del(&aesd_device.cdev);
     kfree(aesd_device.cdev);
-    
+
     /**
      * TODO: cleanup AESD specific poritions here as necessary
     */
