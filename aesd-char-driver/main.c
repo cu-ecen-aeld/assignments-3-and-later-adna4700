@@ -288,7 +288,7 @@ void aesd_cleanup_module(void)
     
     dev_t devno = MKDEV(aesd_major, aesd_minor);
     cdev_del(&aesd_device.cdev);
-    kfree(aesd_device.buff_entry.buffptr);
+    kfree(aesd_device.new_string.buffptr);
 
     /**
      * TODO: cleanup AESD specific poritions here as necessary
