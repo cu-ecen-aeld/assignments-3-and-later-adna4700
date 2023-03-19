@@ -91,7 +91,7 @@ ssize_t aesd_read(struct file *filp, char __user *buf, size_t count,
 
     //lock the device
     //return 0 if the mutex has been acquired 
-    if(mutex_lock_interruptible(&device->mutex_lock))
+    if(mutex_lock_interruptible(&(device->mutex_lock)))
     {
        // If the process is interrupted, the function returns -ERESTARTSYS, indicating that the system call should be restarted
        printk(KERN_DEBUG "Mutex Lock Failed");
@@ -113,9 +113,12 @@ ssize_t aesd_read(struct file *filp, char __user *buf, size_t count,
     //rem_count = (buffer_entry->size - entry_offset);
 
     //update count
+    else
+    {
     if(count > (buffer_entry->size - entry_offset))
     {
        count = buffer_entry->size - entry_offset;
+    }
     }
    // else
    // {
@@ -142,7 +145,7 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
     //size_t result_copy = 0;
     size_t data_recv = 0;
     //struct aesd_dev *device;
-    const char* new_string_entry;
+    const char* new_string_entry = NULL;
     struct aesd_dev *device = filp->private_data;
     PDEBUG("write %zu bytes with offset %lld",count,*f_pos);
     printk(KERN_DEBUG "write %zu bytes with offset %lld",count,*f_pos);
@@ -162,7 +165,7 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
 
     
     
-    if(mutex_lock_interruptible(&device->mutex_lock))
+    if(mutex_lock_interruptible(&(device->mutex_lock)))
     {
        // If the process is interrupted, the function returns -ERESTARTSYS, indicating that the system call should be restarted
        printk(KERN_DEBUG "Mutex Lock Failed");
@@ -203,7 +206,7 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
         retval = count - data_recv;
         device->new_string.size += retval;
 
-        if(strchr((char*)(device->new_string.buffptr), '\n'))
+        if(memchr(device->new_string.buffptr, '\n', device->new_string.size))
         {
             new_string_entry = aesd_circular_buffer_add_entry(&device->circular_buff, &device->new_string);
             if(new_string_entry)
@@ -299,7 +302,7 @@ void aesd_cleanup_module(void)
 	        buff_entry->size = 0;
         }
     }
-    mutex_destroy(&aesd_device.mutex_lock);
+    mutex_destroy(&(aesd_device.mutex_lock));
     unregister_chrdev_region(devno, 1);
 }
 
