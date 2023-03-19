@@ -123,7 +123,7 @@ ssize_t aesd_read(struct file *filp, char __user *buf, size_t count,
     //}
     
     //copy data to the user
-    bytes_count_read = copy_to_user(buf, (buffer_entry->buffptr + entry_offset), bytes_count_read);
+    bytes_count_read = copy_to_user(buf, (buffer_entry->buffptr + entry_offset),count);
     retval = count -  bytes_count_read;
 
     *f_pos = *f_pos + retval;
