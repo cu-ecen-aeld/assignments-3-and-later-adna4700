@@ -66,7 +66,7 @@ ssize_t aesd_read(struct file *filp, char __user *buf, size_t count,
     ssize_t retval = 0;
     size_t entry_offset = 0;
     size_t bytes_count_read = 0;
-    size_t rem_count=0;
+    //size_t rem_count=0;
     struct aesd_buffer_entry *buffer_entry = NULL;
     struct aesd_dev *device = filp->private_data;
     
@@ -108,27 +108,24 @@ ssize_t aesd_read(struct file *filp, char __user *buf, size_t count,
         goto exiting;
     }
     
-    rem_count = (buffer_entry->size - entry_offset);
+    //rem_count = (buffer_entry->size - entry_offset);
 
     //update count
-    if(rem_count > (buffer_entry->size - entry_offset))
+    if(count > (buffer_entry->size - entry_offset))
     {
-        bytes_count_read = buffer_entry->size - entry_offset;
+       count = buffer_entry->size - entry_offset;
     }
-    else
-    {
-        bytes_count_read = rem_count;
-    }
+   // else
+   // {
+     //   bytes_count_read = rem_count;
+    //}
     
     //copy data to the user
-    if(copy_to_user(buf, buffer_entry->buffptr + entry_offset, bytes_count_read))
-    {
-        retval = -EFAULT;
-        goto exiting;
-    }
+    bytes_count_read = copy_to_user(buf, buffer_entry->buffptr + entry_offset, bytes_count_read);
+    retval = count -  bytes_count_read;
 
-    *f_pos += bytes_count_read;
-    retval = bytes_count_read;
+    *f_pos = *f_pos + retval;
+    
 
     exiting:
     mutex_unlock(&device->mutex_lock);
