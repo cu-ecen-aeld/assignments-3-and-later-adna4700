@@ -306,7 +306,7 @@ void aesd_cleanup_module(void)
 		if(buffer_entry->buffptr != NULL)
         {
 			kfree(buffer_entry->buffptr);
-             buff_entry->size = 0;
+             buffer_entry->size = 0;
 		}
 	}
     mutex_destroy(&(aesd_device.mutex_lock));
