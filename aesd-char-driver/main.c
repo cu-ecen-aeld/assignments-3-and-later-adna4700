@@ -38,15 +38,15 @@ int aesd_open(struct inode *inode, struct file *filp)
      * TODO: handle open
      */
 
-    struct aesd_dev *char_pt;
+    struct aesd_dev *device;
     PDEBUG("open");
     //char_pt = container_of(inode->i_cdev, struct aesd_dev, cdev);
     //Uses the container_of macro to obtain a pointer to the struct aesd_dev structure associated with the character device file represented by the given inode.
     // The container_of macro takes three arguments: the first argument is a pointer to a member of the structure (in this case, inode->i_cdev)
     //the second argument is the type of the structure (in this case, struct aesd_dev)
     //the third argument is the name of the member in the structure (in this case, cdev).
-    char_pt = container_of(inode->i_cdev, struct aesd_dev, cdev);
-    filp->private_data = char_pt;
+    device = container_of(inode->i_cdev, struct aesd_dev, cdev);
+    filp->private_data = device;
 
     return 0;
 }
@@ -68,11 +68,13 @@ ssize_t aesd_read(struct file *filp, char __user *buf, size_t count,
     size_t bytes_count_read = 0;
     //size_t rem_count=0;
     struct aesd_buffer_entry *buffer_entry = NULL;
-    struct aesd_dev *device = filp->private_data;
+    struct aesd_dev *device;
     
     
     PDEBUG("read %zu bytes with offset %lld",count,*f_pos);
     printk(KERN_DEBUG "read %zu bytes with offset %lld",count,*f_pos);
+
+    device = (struct aesd_dev*)filp->private_data;
 
     /**
      * TODO: handle read
@@ -101,7 +103,7 @@ ssize_t aesd_read(struct file *filp, char __user *buf, size_t count,
     //struct aesd_buffer_entry *aesd_circular_buffer_find_entry_offset_for_fpos(struct aesd_circular_buffer *buffer,
     //   size_t char_offset, size_t *entry_offset_byte_rtn );
 
-    buffer_entry = aesd_circular_buffer_find_entry_offset_for_fpos(&device->circular_buff, *f_pos, &entry_offset);
+    buffer_entry = aesd_circular_buffer_find_entry_offset_for_fpos(&(device->circular_buff), *f_pos, &entry_offset);
     if(buffer_entry == NULL)
     {
         retval = 0;
@@ -121,7 +123,7 @@ ssize_t aesd_read(struct file *filp, char __user *buf, size_t count,
     //}
     
     //copy data to the user
-    bytes_count_read = copy_to_user(buf, buffer_entry->buffptr + entry_offset, bytes_count_read);
+    bytes_count_read = copy_to_user(buf, (buffer_entry->buffptr + entry_offset), bytes_count_read);
     retval = count -  bytes_count_read;
 
     *f_pos = *f_pos + retval;
@@ -294,7 +296,7 @@ void aesd_cleanup_module(void)
         if(buff_entry->buffptr != NULL)
         {
             kfree(buff_entry->buffptr);
-	    buff_entry->size = 0;
+	        buff_entry->size = 0;
         }
     }
     mutex_destroy(&aesd_device.mutex_lock);
