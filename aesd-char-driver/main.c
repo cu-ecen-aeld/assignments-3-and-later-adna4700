@@ -90,7 +90,7 @@ ssize_t aesd_read(struct file *filp, char __user *buf, size_t count,
 	
 	//lock the device
     //return 0 if the mutex has been acquired 
-	if(mutex_lock_interruptible(&dev->mutex_lock))
+	if(mutex_lock_interruptible(&device->mutex_lock))
     {
 		// If the process is interrupted, the function returns -ERESTARTSYS, indicating that the system call should be restarted
         printk(KERN_DEBUG "Mutex Lock Failed");
@@ -218,7 +218,7 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
 	}
 
     exiting:
-	mutex_unlock(&device->,mutex_lock);
+	mutex_unlock(&device->mutex_lock);
 	return retval;
 
 }
