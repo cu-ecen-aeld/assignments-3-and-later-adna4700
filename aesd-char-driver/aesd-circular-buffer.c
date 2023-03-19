@@ -216,11 +216,13 @@ const char* aesd_circular_buffer_add_entry(struct aesd_circular_buffer *buffer, 
        // printf("New out_offs is %d\r\n", buffer->out_offs);
 
 
-
+        /*
         if(buffer->in_offs == (AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED - 1))
             buffer->in_offs = 0;
         else
             buffer->in_offs += 1;
+            */
+        buffer->in_offs = buffer->out_offs;
         
         //printf("New in_offs is %d\r\n", buffer->in_offs);
            
