@@ -66,10 +66,8 @@ ssize_t aesd_read(struct file *filp, char __user *buf, size_t count,
 	ssize_t retval = 0;
 	ssize_t entry_offset = 0;
 	ssize_t bytes_count_read = 0;
-	/****/
     size_t rem_count=0;
-    int result = 0;
-    /****/
+    int result = 0; 
 	struct aesd_buffer_entry *buffer_entry = NULL;
 	struct aesd_dev *device;
 	
@@ -112,18 +110,6 @@ ssize_t aesd_read(struct file *filp, char __user *buf, size_t count,
         goto exiting;
 	}
 
-    //rem_count = (buffer_entry->size - entry_offset);
-    //update count
-
-    /******/
-	// else
-    // {	
-	// 	if(count > (buffer_entry->size - entry_offset)) 
-    //     {
-	// 		count = buffer_entry->size - entry_offset;
-	// 	}
-	// }
-	/*********/
 
     /*********/
     rem_count = (buffer_entry->size - entry_offset);
@@ -152,12 +138,6 @@ ssize_t aesd_read(struct file *filp, char __user *buf, size_t count,
     *f_pos += bytes_count_read;
     retval = bytes_count_read;
     
-    /******/
-    // update fpos and return value (retval)
-	// retval = count - bytes_count_read;
-	
-	// *f_pos += retval;
-    /*****/
     exiting:
 	mutex_unlock(&(device->mutex_lock));
 	return retval;
@@ -326,10 +306,10 @@ void aesd_cleanup_module(void)
 		if(buffer_entry->buffptr != NULL)
         {
 			kfree(buffer_entry->buffptr);
-            // buff_entry->size = 0;
+             buff_entry->size = 0;
 		}
 	}
- //   mutex_destroy(&(aesd_device.mutex_lock));
+    mutex_destroy(&(aesd_device.mutex_lock));
 	unregister_chrdev_region(devno, 1);
 }
 
