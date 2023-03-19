@@ -127,9 +127,9 @@ ssize_t aesd_read(struct file *filp, char __user *buf, size_t count,
     
     //copy data to the user
     bytes_count_read = copy_to_user(buf, (buffer_entry->buffptr + entry_offset), count);
-    retval = count -  bytes_count_read;
+    retval = count - bytes_count_read;
 
-    *f_pos = *f_pos + retval;
+    *f_pos += retval;
     
 
     exiting:
@@ -179,7 +179,7 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
         //allocate the new buffer size
         //The GFP_KERNEL flag passed as the second argument to kzalloc indicates that the memory should
         // be allocated from the kernel's normal kernel memory pool
-        device->new_string.buffptr = kmalloc(sizeof(char)*count , GFP_KERNEL);
+        device->new_string.buffptr = kmalloc(count*sizeof(char) , GFP_KERNEL);
 
         if(device->new_string.buffptr == NULL)
         {
@@ -299,10 +299,10 @@ void aesd_cleanup_module(void)
         if(buff_entry->buffptr != NULL)
         {
             kfree(buff_entry->buffptr);
-	        buff_entry->size = 0;
+	        //buff_entry->size = 0;
         }
     }
-    mutex_destroy(&(aesd_device.mutex_lock));
+    //mutex_destroy(&(aesd_device.mutex_lock));
     unregister_chrdev_region(devno, 1);
 }
 
