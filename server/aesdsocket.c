@@ -35,10 +35,17 @@ https://man7.org/linux/man-pages/man3/strftime.3.html
 #include <sys/time.h>
 #include <poll.h>
 
+#define USE_AESD_CHAR_DEVICE (1)
 #define PORT 9000
 #define BACKLOG 5
 #define MAX_SIZE 1024
-#define FILE_PATH "/var/tmp/aesdsocketdata"
+
+#if (USE_AESD_CHAR_DEVICE == 1)
+    #define FILE_PATH "/var/tmp/aesdchar"
+#else
+    #define FILE_PATH "/var/tmp/aesdsocketdata"
+#endif
+
 //server socket fd always non negative so initialized to a negative integer
 int sock_fd = -1;
 //FILE pointer
@@ -425,6 +432,7 @@ void *thread_routine(void *client_parameters)
     return NULL;
 }
 
+#if (USE_AESD_CHAR_DEVICE == 0)
 void* timer_routine(void* mutex_t)
 {
    //parameters to accesss
@@ -542,7 +550,7 @@ void* timer_routine(void* mutex_t)
     // pthread_exit(NULL);
     return NULL;
 }
-
+#endif
 
 int main(int argc, char *argv[])
 {
@@ -663,9 +671,11 @@ int main(int argc, char *argv[])
         printf("Waiting for connections.....\r\n");
     }
 
+#if (USE_AESD_CHAR_DEVICE == 0)
     //timer thread created
     pthread_t timer_thread_id;
     pthread_create(&timer_thread_id, NULL, timer_routine, &mutex);
+#endif
 
     while (1)
     {
@@ -730,7 +740,10 @@ int main(int argc, char *argv[])
         }
 
     }
+#if(USE_AESD_CHAR_DEVICE == 0)
     pthread_join(timer_thread_id, NULL);
+#endif
+
     while(!SLIST_EMPTY(&head))
     {
         threads_node = SLIST_FIRST(&head);
