@@ -34,11 +34,17 @@ https://man7.org/linux/man-pages/man3/strftime.3.html
 #include <time.h>
 #include <sys/time.h>
 #include <poll.h>
+#include "queue.h"
+#include "aesd_ioctl.h"
+
 
 #define USE_AESD_CHAR_DEVICE (1)
 #define PORT 9000
 #define BACKLOG 5
 #define MAX_SIZE 1024
+
+#define IOCTL_CMD ("AESDCHAR_IOCSEEKTO:")
+#define IOCTL_CMD_LEN (19)
 
 #if (USE_AESD_CHAR_DEVICE == 1)
     #define FILE_PATH "/var/tmp/aesdchar"
@@ -50,6 +56,8 @@ https://man7.org/linux/man-pages/man3/strftime.3.html
 int sock_fd = -1;
 //FILE pointer
 FILE *fp;
+int file_descriptor;
+
 // Daemon Check flag initialized to false
 bool is_daemon = false;
 
@@ -105,7 +113,6 @@ void signal_handler(int signal)
 
 void graceful_exit()
 {
-
     // Closing the server socket
     if (sock_fd > -1)
     {
@@ -202,7 +209,7 @@ int making_daemon()
 
 void *thread_routine(void *client_parameters)
 {
-   // does that read write via file
+    // does that read write via file
     int len_tracker, buffer_len, index, mutex_lock;
 
     client_thread *parameters = (client_thread *)client_parameters;
@@ -261,11 +268,34 @@ void *thread_routine(void *client_parameters)
             }
         }
 
+        if(strncmp(buffer, IOCTL_CMD, IOCTL_CMD_LEN) == 0)
+        {
+            struct aesd_seekto seekto;
+            sscanf(buffer, "AESDCHAR_IOCSEEKTO:%d,%d", &seekto.write_cmd, &seekto.write_cmd_offset);
+                
+            file_descriptor = fileno(fp);
+
+            //perform ioctl
+            if(ioctl(file_descriptor, AESDCHAR_IOCSEEKTO, &seekto) !=0)
+            {
+                syslog(LOG_DEBUG, "ioctl failed\r\n");
+                graceful_exit();
+            }
+            else
+            {
+                syslog(LOG_DEBUG, "ioctl successful \r\n");
+                printf("ioctl successful \r\n");
+            }    
+        }        
+        else
+        {
+
         // if(buffer_len < MAX_SIZE)
         if (index < buffer_len)
         {
             // can write to file directly
             // fwrite(buffer, buffer_len, 1, fp);
+
             fseek(fp, 0, SEEK_END);
             mutex_lock = pthread_mutex_lock(parameters->mutex);
             if (mutex_lock != 0)
@@ -302,6 +332,7 @@ void *thread_routine(void *client_parameters)
                 printf("buf from fwrite to a file from buffer: ");
                 for (int i = 0; i < (len_tracker - MAX_SIZE + index + 1); i++)
                     printf("%c", buffer[i]);
+            
                  
         }
         else
@@ -319,12 +350,13 @@ void *thread_routine(void *client_parameters)
                 }
                 printf("Incremented the buffer\r\n");
         }
+        
         printf("Before fseek\r\n");
         fseek(fp, 0, SEEK_SET);
         printf("After fseek\r\n");
 
         mutex_lock = pthread_mutex_unlock(parameters->mutex);
-        if (mutex_lock != 0)
+        if (mutex_unlock != 0)
         {
             printf("Error in releasing the mutex\r\n");
             // Log this info
@@ -340,6 +372,8 @@ void *thread_routine(void *client_parameters)
             pthread_exit(NULL);
         }
         printf("mutex unlocked\r\n");
+
+        }
         //keep it open
         //fclose(fp);
         /************/
@@ -380,17 +414,17 @@ void *thread_routine(void *client_parameters)
 
         char *write_buffer = (char *)malloc(file_bytes);
         if (write_buffer == NULL)
-            {
-                printf("Error in Malloc\r\n");
-                // Log this info
-                syslog(LOG_INFO, "Error in Malloc\r\n");
-                // thread_complete true
-                parameters->thread_complete = true;
-                graceful_exit();
-                close(parameters->client_fd);
-                pthread_exit(NULL);
-            }
-            printf("Created a write buffer\r\n");
+        {
+            printf("Error in Malloc\r\n");
+            // Log this info
+            syslog(LOG_INFO, "Error in Malloc\r\n");
+            // thread_complete true
+            parameters->thread_complete = true;
+            graceful_exit();
+            close(parameters->client_fd);
+            pthread_exit(NULL);
+        }
+        printf("Created a write buffer\r\n");
 
         fseek(fp, 0, SEEK_SET);
         if (fread(write_buffer, file_bytes, 1, fp) < 0)
